@@ -26,19 +26,28 @@ The tool is intentionally simple: it runs locally, has no telemetry, requires no
 
 ## Quick start
 
-From the repository root:
+Clone the repo and run it locally:
 
 ```bash
+git clone https://github.com/vasiliy0/playwright-flake-triage.git
+cd playwright-flake-triage
 PYTHONPATH=src python3 -m pw_flake_triage.cli examples --format markdown
+```
+
+Write JSON output for automation:
+
+```bash
 PYTHONPATH=src python3 -m pw_flake_triage.cli examples --format json -o triage-report.json
 ```
 
-Optional editable install:
+Optional editable install from the cloned repo:
 
 ```bash
 python3 -m pip install -e .
 pw-flake-triage path/to/playwright-report.json path/to/ci.log
 ```
+
+The CLI uses only local files you pass to it. It does not contact Playwright, GitHub, CI providers, or any external service.
 
 ## Example output
 
@@ -51,6 +60,13 @@ Findings: **3**
 ## Summary by suspected cause
 - **Auth/session or expected page state mismatch**: 2
 - **Ambiguous or brittle selector**: 1
+
+## Findings
+### 1. Auth/session or expected page state mismatch
+- Issue: Synthetic auth/session timeout symptom
+- Source: https://github.com/example/repo/issues/123
+- Suggested fixes:
+  - Verify the test starts with the intended storage state, user role, and seeded data.
 ```
 
 ## Optional issue metadata for validation snippets
@@ -73,7 +89,7 @@ Flaky test cleanup usually starts with a pile of traces and CI logs. This v1 doe
 
 ## Safety / privacy
 
-- Runs locally only.
+- Runs locally only; no network calls or telemetry.
 - Does not call external services.
 - Does not mutate test reports or project files.
 - Be careful before sharing generated reports: logs may contain internal URLs, user data, or secrets.
