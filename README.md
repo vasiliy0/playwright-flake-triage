@@ -26,28 +26,41 @@ The tool is intentionally simple: it runs locally, has no telemetry, requires no
 
 ## Quick start
 
-Clone the repo and run it locally:
+Install the CLI and run it against local Playwright reports or CI logs:
 
 ```bash
-git clone https://github.com/vasiliy0/playwright-flake-triage.git
-cd playwright-flake-triage
-PYTHONPATH=src python3 -m pw_flake_triage.cli examples --format markdown
+python3 -m pip install playwright-flake-triage
+pw-flake-triage path/to/playwright-report.json path/to/ci.log --format markdown
 ```
 
 Write JSON output for automation:
 
 ```bash
-PYTHONPATH=src python3 -m pw_flake_triage.cli examples --format json -o triage-report.json
-```
-
-Optional editable install from the cloned repo:
-
-```bash
-python3 -m pip install -e .
-pw-flake-triage path/to/playwright-report.json path/to/ci.log
+pw-flake-triage path/to/reports-or-logs --format json -o triage-report.json
 ```
 
 The CLI uses only local files you pass to it. It does not contact Playwright, GitHub, CI providers, or any external service.
+
+## TestPyPI dry run
+
+Production PyPI publishing is not enabled yet. To try the current dry-run build from TestPyPI:
+
+```bash
+python3 -m pip install \
+  --index-url https://test.pypi.org/simple/ \
+  --extra-index-url https://pypi.org/simple/ \
+  playwright-flake-triage
+pw-flake-triage path/to/playwright-report.json path/to/ci.log
+```
+
+## Clone / development install
+
+```bash
+git clone https://github.com/vasiliy0/playwright-flake-triage.git
+cd playwright-flake-triage
+python3 -m pip install -e .
+pw-flake-triage examples --format markdown
+```
 
 ## Example output
 
@@ -97,7 +110,7 @@ Flaky test cleanup usually starts with a pile of traces and CI logs. This v1 doe
 ## Release status
 
 - License: MIT.
-- Distribution: GitHub source release.
+- Distribution: GitHub source release and TestPyPI dry-run package.
 - Current release notes: [`docs/PUBLIC_RELEASE_NOTES_v0.1.0.md`](docs/PUBLIC_RELEASE_NOTES_v0.1.0.md).
 
 ## Docs
