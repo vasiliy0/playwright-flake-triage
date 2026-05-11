@@ -1,9 +1,11 @@
 from pathlib import Path
 import sys
+import tomllib
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+import pw_flake_triage
 from pw_flake_triage.analyzer import analyze_paths
 from pw_flake_triage.cli import render_markdown
 
@@ -22,6 +24,11 @@ class TestCli(unittest.TestCase):
     def categories_for(self, *parts: str) -> list[str]:
         result = analyze_paths([self.fixture(*parts)])
         return [f.category for f in result.findings]
+
+    def test_package_version_matches_project_metadata(self):
+        pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
+        project = tomllib.loads(pyproject.read_text())["project"]
+        self.assertEqual(pw_flake_triage.__version__, project["version"])
 
     def test_analyzes_example_json(self):
         categories = set(self.categories_for("examples", "playwright-report.json"))
