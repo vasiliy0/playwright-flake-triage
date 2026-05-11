@@ -41,18 +41,6 @@ pw-flake-triage path/to/reports-or-logs --format json -o triage-report.json
 
 The CLI uses only local files you pass to it. It does not contact Playwright, GitHub, CI providers, or any external service.
 
-## TestPyPI dry run
-
-Production PyPI publishing is not enabled yet. To try the current dry-run build from TestPyPI:
-
-```bash
-python3 -m pip install \
-  --index-url https://test.pypi.org/simple/ \
-  --extra-index-url https://pypi.org/simple/ \
-  playwright-flake-triage
-pw-flake-triage path/to/playwright-report.json path/to/ci.log
-```
-
 ## Clone / development install
 
 ```bash
