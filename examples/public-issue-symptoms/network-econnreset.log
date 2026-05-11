@@ -1,0 +1,5 @@
+Issue: Synthetic network ECONNRESET symptom
+URL: https://github.com/example/repo/issues/127
+
+Error: request failed while running Playwright in a container.
+Socket error: ECONNRESET when targeting the browser service.

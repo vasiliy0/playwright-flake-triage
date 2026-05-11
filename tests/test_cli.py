@@ -15,6 +15,7 @@ SELECTOR = "Ambiguous or brittle selector"
 AUTH_STATE = "Auth/session or expected page state mismatch"
 LIFECYCLE = "Browser/context/page lifecycle race"
 VISUAL = "Visual/snapshot instability"
+NETWORK = "Network or backend dependency flake"
 
 
 class TestCli(unittest.TestCase):
@@ -61,13 +62,28 @@ class TestCli(unittest.TestCase):
         self.assertEqual(categories, [AUTH_STATE])
         self.assertNotIn(TIMEOUT, categories)
 
+    def test_issue_derived_browser_lifecycle_regression(self):
+        categories = self.categories_for("examples", "public-issue-symptoms", "browser-lifecycle-target-closed.log")
+        self.assertEqual(categories, [LIFECYCLE])
+
+    def test_issue_derived_network_econnreset_regression(self):
+        categories = self.categories_for("examples", "public-issue-symptoms", "network-econnreset.log")
+        self.assertEqual(categories, [NETWORK])
+
+    def test_issue_derived_neterr_timeout_regression(self):
+        categories = self.categories_for("examples", "public-issue-symptoms", "network-neterr-timeout.log")
+        self.assertIn(NETWORK, categories)
+
     def test_all_issue_derived_fixtures_are_part_of_regression_suite(self):
         result = analyze_paths([self.fixture("examples", "public-issue-symptoms")])
         by_test = {finding.test: finding.category for finding in result.findings}
         self.assertEqual(by_test["strict-mode-selector.log"], SELECTOR)
         self.assertEqual(by_test["auth-session-timeout.log"], AUTH_STATE)
         self.assertEqual(by_test["route-permission-hang.log"], AUTH_STATE)
-        self.assertEqual(len(result.findings), 3)
+        self.assertEqual(by_test["browser-lifecycle-target-closed.log"], LIFECYCLE)
+        self.assertEqual(by_test["network-econnreset.log"], NETWORK)
+        self.assertEqual(by_test["network-neterr-timeout.log"], NETWORK)
+        self.assertEqual(len(result.findings), 6)
 
 
 if __name__ == "__main__":

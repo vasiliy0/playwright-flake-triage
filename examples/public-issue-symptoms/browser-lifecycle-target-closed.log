@@ -1,0 +1,5 @@
+Issue: Synthetic browser lifecycle target-closed symptom
+URL: https://github.com/example/repo/issues/126
+
+Playwright::TargetClosedError: Target page, context or browser has been closed.
+The job finished while an async page operation was still running.

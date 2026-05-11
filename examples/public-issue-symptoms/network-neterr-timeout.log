@@ -1,0 +1,5 @@
+Issue: Synthetic net::ERR timeout symptom
+URL: https://github.com/example/repo/issues/128
+
+page.goto failed: net::ERR_CONNECTION_TIMED_OUT at https://localhost:7119/
+The application server was not reachable before the Playwright test started.
