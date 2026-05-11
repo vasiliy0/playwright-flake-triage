@@ -1,0 +1,5 @@
+Issue: Synthetic role permission page-state symptom
+URL: https://github.com/example/repo/issues/125
+
+Page.goto: Timeout 30000ms exceeded waiting for networkidle.
+The CEO role is not allowed for this route and the app hangs instead of redirecting to Access Denied.

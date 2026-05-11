@@ -1,0 +1,2 @@
+Error: expect(page).toHaveScreenshot('dashboard.png') failed
+Screenshot comparison failed: 103 pixels different

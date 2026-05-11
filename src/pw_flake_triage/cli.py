@@ -1,0 +1,84 @@
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from collections import Counter
+
+from .analyzer import analyze_paths, Analysis
+
+
+def render_markdown(analysis: Analysis) -> str:
+    lines: list[str] = []
+    lines.append("# Playwright Flake Triage Report")
+    lines.append("")
+    lines.append(f"Scanned files: **{analysis.scanned_files}**")
+    lines.append(f"Findings: **{len(analysis.findings)}**")
+    lines.append("")
+    if analysis.notes:
+        lines.append("## Notes")
+        for note in analysis.notes:
+            lines.append(f"- {note}")
+        lines.append("")
+    if not analysis.findings:
+        lines.append("No failure signals found in supported files.")
+        return "\n".join(lines) + "\n"
+
+    by_category = Counter(f.category for f in analysis.findings)
+    lines.append("## Summary by suspected cause")
+    for category, count in by_category.most_common():
+        lines.append(f"- **{category}**: {count}")
+    lines.append("")
+
+    lines.append("## Findings")
+    for i, f in enumerate(analysis.findings, 1):
+        lines.append(f"### {i}. {f.category}")
+        lines.append(f"- File: `{f.file}`")
+        lines.append(f"- Test: `{f.test}`")
+        lines.append(f"- Status: `{f.status}`")
+        if f.issue_title:
+            lines.append(f"- Issue: {f.issue_title}")
+        if f.issue_url:
+            lines.append(f"- Source: {f.issue_url}")
+        lines.append(f"- Severity: **{f.severity}**; confidence: **{f.confidence}%**")
+        lines.append(f"- Signal: {f.signal}")
+        lines.append(f"- Why this happens: {f.why}")
+        lines.append("- Suggested fixes:")
+        for fix in f.fixes:
+            lines.append(f"  - {fix}")
+        lines.append("")
+    return "\n".join(lines)
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="pw-flake-triage",
+        description="Read-only heuristic triage for Playwright JSON/JUnit reports and CI logs.",
+    )
+    parser.add_argument("paths", nargs="+", help="Report/log files or directories to scan")
+    parser.add_argument("--format", choices=["markdown", "json"], default="markdown", help="Output format")
+    parser.add_argument("--output", "-o", help="Write report to file instead of stdout")
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    analysis = analyze_paths(args.paths)
+    if args.format == "json":
+        output = json.dumps(analysis.to_dict(), indent=2)
+    else:
+        output = render_markdown(analysis)
+    if args.output:
+        with open(args.output, "w", encoding="utf-8") as fh:
+            fh.write(output)
+            if not output.endswith("\n"):
+                fh.write("\n")
+    else:
+        sys.stdout.write(output)
+        if not output.endswith("\n"):
+            sys.stdout.write("\n")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

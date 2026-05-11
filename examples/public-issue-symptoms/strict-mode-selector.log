@@ -1,0 +1,5 @@
+Issue: Synthetic strict mode selector symptom
+URL: https://github.com/example/repo/issues/124
+
+Error: strict mode violation: getByRole('heading', { name: /devices/i }).or(getByRole('heading', { name: /sessions/i })) resolved to 2 elements.
+await expect(locator).toBeVisible({ timeout: 10000 })

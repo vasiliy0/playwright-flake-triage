@@ -1,0 +1,5 @@
+<testsuite name="example" tests="2" failures="1">
+  <testcase classname="auth.spec.ts" name="login redirects">
+    <failure message="Target page, context or browser has been closed">Protocol error during navigation</failure>
+  </testcase>
+</testsuite>

@@ -1,0 +1,6 @@
+Issue: Synthetic auth/session timeout symptom
+URL: https://github.com/example/repo/issues/123
+
+Playwright TimeoutError: Timeout 30000ms exceeded.
+logs: waiting for get_by_label("Keep me signed in")
+The browser reached a login page but expected an authenticated application page.

@@ -1,0 +1,45 @@
+{
+  "suites": [
+    {
+      "title": "checkout.spec.ts",
+      "specs": [
+        {
+          "title": "submits order",
+          "tests": [
+            {
+              "status": "failed",
+              "results": [
+                {
+                  "status": "timedOut",
+                  "errors": [
+                    {
+                      "message": "Timeout 30000ms exceeded. locator('[data-testid=submit]').click: waiting for element to be visible"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "shows product card",
+          "tests": [
+            {
+              "status": "failed",
+              "results": [
+                {
+                  "status": "failed",
+                  "errors": [
+                    {
+                      "message": "strict mode violation: locator('.card') resolved to 2 elements"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
