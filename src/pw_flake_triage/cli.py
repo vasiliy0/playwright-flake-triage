@@ -10,6 +10,9 @@ from .analyzer import analyze_paths, Analysis
 from .rules import RULES, load_rules_config
 
 
+SEVERITY_ORDER = {"low": 1, "medium": 2, "high": 3}
+
+
 def render_markdown(analysis: Analysis) -> str:
     lines: list[str] = []
     lines.append("# Playwright Flake Triage Report")
@@ -81,6 +84,16 @@ def build_parser() -> argparse.ArgumentParser:
         default=[],
         help="Load additional heuristic rules from a JSON config file. Can be repeated.",
     )
+    parser.add_argument(
+        "--fail-on-findings",
+        action="store_true",
+        help="Exit with code 1 when any finding is detected. The report is still written first.",
+    )
+    parser.add_argument(
+        "--fail-on-severity",
+        choices=["low", "medium", "high"],
+        help="Exit with code 1 when findings at or above this severity are detected.",
+    )
     return parser
 
 
@@ -109,7 +122,18 @@ def main(argv: list[str] | None = None) -> int:
         sys.stdout.write(output)
         if not output.endswith("\n"):
             sys.stdout.write("\n")
+    if _should_fail_gate(analysis, args.fail_on_findings, args.fail_on_severity):
+        return 1
     return 0
+
+
+def _should_fail_gate(analysis: Analysis, fail_on_findings: bool, fail_on_severity: str | None) -> bool:
+    if fail_on_findings and analysis.findings:
+        return True
+    if fail_on_severity:
+        threshold = SEVERITY_ORDER[fail_on_severity]
+        return any(SEVERITY_ORDER.get(f.severity, 0) >= threshold for f in analysis.findings)
+    return False
 
 
 def _load_rules(config_paths: list[str]) -> tuple:

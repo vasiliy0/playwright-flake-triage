@@ -117,6 +117,37 @@ class TestCli(unittest.TestCase):
             exit_code = main([self.fixture("examples"), "--rules-config", str(rules_config)])
             self.assertEqual(exit_code, 2)
 
+    def test_fail_on_findings_returns_one_after_writing_report(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output = Path(tmpdir) / "report.json"
+            exit_code = main([
+                self.fixture("examples", "public-issue-symptoms", "strict-mode-selector.log"),
+                "--format",
+                "json",
+                "--output",
+                str(output),
+                "--fail-on-findings",
+            ])
+            self.assertEqual(exit_code, 1)
+            report = json.loads(output.read_text())
+            self.assertEqual(report["finding_count"], 1)
+
+    def test_fail_on_severity_returns_one_for_threshold_or_higher(self):
+        exit_code = main([
+            self.fixture("examples", "public-issue-symptoms", "strict-mode-selector.log"),
+            "--fail-on-severity",
+            "high",
+        ])
+        self.assertEqual(exit_code, 1)
+
+    def test_fail_on_severity_keeps_zero_when_below_threshold(self):
+        exit_code = main([
+            self.fixture("examples", "public-issue-symptoms", "network-econnreset.log"),
+            "--fail-on-severity",
+            "high",
+        ])
+        self.assertEqual(exit_code, 0)
+
     def test_issue_derived_strict_mode_selector_regression(self):
         categories = self.categories_for("examples", "public-issue-symptoms", "strict-mode-selector.log")
         self.assertEqual(categories, [SELECTOR])

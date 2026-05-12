@@ -45,6 +45,13 @@ Add project-specific heuristics with a JSON rules config:
 pw-flake-triage ci.log --rules-config examples/custom-rules.json
 ```
 
+Use gate mode when you want CI to fail after the report is written:
+
+```bash
+pw-flake-triage test-results ci.log --fail-on-severity high
+pw-flake-triage test-results ci.log --fail-on-findings
+```
+
 Append a Markdown report to a GitHub Actions job summary while keeping JSON for artifacts or follow-up steps:
 
 ```bash
@@ -87,6 +94,15 @@ Use `--rules-config` to add local project/team heuristics without changing the b
 ```
 
 Rules are local JSON files. They are not uploaded or sent anywhere.
+
+## CI gate modes
+
+By default, the CLI is non-gating and exits `0` after writing the report, even when findings are detected. Add a gate flag when the triage result should fail a CI step:
+
+- `--fail-on-findings` exits `1` if any finding is detected.
+- `--fail-on-severity high|medium|low` exits `1` if any finding has severity at or above the threshold.
+
+Reports are written before the non-zero exit, so CI jobs can still upload JSON artifacts or render `$GITHUB_STEP_SUMMARY`.
 
 ## GitHub Actions summary
 

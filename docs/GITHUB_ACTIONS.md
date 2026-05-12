@@ -59,6 +59,36 @@ jobs:
           if-no-files-found: ignore
 ```
 
+## Optional CI gate mode
+
+By default, `pw-flake-triage` is report-only and exits `0` when findings exist. Add a gate flag if a workflow should fail after the report is written.
+
+Fail only on high-severity findings:
+
+```yaml
+- name: Triage Playwright reports and fail on high severity
+  if: always()
+  run: |
+    pw-flake-triage \
+      test-results \
+      ci.log \
+      --format json \
+      --output triage-report.json \
+      --github-step-summary \
+      --fail-on-severity high
+```
+
+Fail on any finding:
+
+```yaml
+- name: Triage Playwright reports and fail on any finding
+  if: always()
+  run: |
+    pw-flake-triage test-results ci.log --github-step-summary --fail-on-findings
+```
+
+The report is written before the command exits `1`, so use `if: always()` on artifact upload steps if you need the JSON report after a gate failure.
+
 ## Add repo-specific custom rules
 
 Create a local config such as `.github/pw-flake-rules.json`:
