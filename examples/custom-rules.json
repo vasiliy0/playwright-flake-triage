@@ -1,0 +1,22 @@
+{
+  "rules": [
+    {
+      "id": "app-hydration",
+      "label": "Application hydration race",
+      "severity": "medium",
+      "patterns": [
+        "hydration failed",
+        "client boot not complete",
+        "app shell not ready"
+      ],
+      "why": "The application may not have finished client-side hydration before the test interacted with it.",
+      "fixes": [
+        "Wait for a durable hydrated UI marker before interacting.",
+        "Prefer web-first assertions over fixed sleeps around app boot.",
+        "Expose a test-friendly readiness signal if hydration is intentionally delayed."
+      ],
+      "priority": 80,
+      "suppresses": ["timeout-wait"]
+    }
+  ]
+}

@@ -6,7 +6,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 from typing import Any
 
-from .rules import classify
+from .rules import RULES, Rule, classify
 
 TEXT_EXTENSIONS = {".log", ".txt", ".out", ".err"}
 JSON_EXTENSIONS = {".json"}
@@ -55,19 +55,20 @@ def discover(paths: list[Path]) -> list[Path]:
     return sorted(set(files))
 
 
-def analyze_paths(paths: list[str]) -> Analysis:
+def analyze_paths(paths: list[str], rules: tuple[Rule, ...] | None = None) -> Analysis:
     files = discover([Path(p) for p in paths])
+    active_rules = rules or RULES
     findings: list[Finding] = []
     notes: list[str] = []
     for file in files:
         try:
             suffix = file.suffix.lower()
             if suffix in JSON_EXTENSIONS:
-                findings.extend(analyze_json(file))
+                findings.extend(analyze_json(file, active_rules))
             elif suffix in XML_EXTENSIONS:
-                findings.extend(analyze_junit_xml(file))
+                findings.extend(analyze_junit_xml(file, active_rules))
             elif suffix in TEXT_EXTENSIONS:
-                findings.extend(analyze_text(file))
+                findings.extend(analyze_text(file, active_rules))
         except Exception as exc:  # keep CLI useful on mixed report dirs
             notes.append(f"Skipped {file}: {exc}")
     if not files:
@@ -75,10 +76,17 @@ def analyze_paths(paths: list[str]) -> Analysis:
     return Analysis(scanned_files=len(files), findings=findings, notes=notes)
 
 
-def _make_findings(file: Path, test: str, status: str, text: str, metadata: dict[str, str] | None = None) -> list[Finding]:
+def _make_findings(
+    file: Path,
+    test: str,
+    status: str,
+    text: str,
+    metadata: dict[str, str] | None = None,
+    rules: tuple[Rule, ...] = RULES,
+) -> list[Finding]:
     metadata = metadata or {}
     found = []
-    for rule, count in classify(text):
+    for rule, count in classify(text, rules):
         found.append(
             Finding(
                 file=str(file),
@@ -116,13 +124,13 @@ def _make_findings(file: Path, test: str, status: str, text: str, metadata: dict
     return found
 
 
-def analyze_text(file: Path) -> list[Finding]:
+def analyze_text(file: Path, rules: tuple[Rule, ...] = RULES) -> list[Finding]:
     text = file.read_text(errors="replace")
     metadata, body = _extract_text_metadata(text)
-    return _make_findings(file, file.name, "log", body, metadata)
+    return _make_findings(file, file.name, "log", body, metadata, rules)
 
 
-def analyze_junit_xml(file: Path) -> list[Finding]:
+def analyze_junit_xml(file: Path, rules: tuple[Rule, ...] = RULES) -> list[Finding]:
     root = ET.parse(file).getroot()
     findings: list[Finding] = []
     for case in root.iter("testcase"):
@@ -136,18 +144,18 @@ def analyze_junit_xml(file: Path) -> list[Finding]:
                 chunks.append(node.attrib.get("message", ""))
                 chunks.append(node.text or "")
         if status != "passed" or any(chunks):
-            findings.extend(_make_findings(file, name, status, "\n".join(chunks)))
+            findings.extend(_make_findings(file, name, status, "\n".join(chunks), rules=rules))
     return findings
 
 
-def analyze_json(file: Path) -> list[Finding]:
+def analyze_json(file: Path, rules: tuple[Rule, ...] = RULES) -> list[Finding]:
     data = json.loads(file.read_text(errors="replace"))
     candidates: list[tuple[str, str, str]] = []
     _walk_json(data, [], candidates)
     findings: list[Finding] = []
     for name, status, text in candidates:
         if status.lower() not in {"passed", "expected", "skipped"} or text.strip():
-            findings.extend(_make_findings(file, name, status, text))
+            findings.extend(_make_findings(file, name, status, text, rules=rules))
     return findings
 
 

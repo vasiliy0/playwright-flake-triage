@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
+from pathlib import Path
 import re
-from typing import Iterable
+from typing import Any, Iterable, Sequence
 
 
 @dataclass(frozen=True)
@@ -127,12 +129,77 @@ RULES: tuple[Rule, ...] = (
 )
 
 
-def classify(text: str) -> list[tuple[Rule, int]]:
-    hits = [(rule, rule.match_count(text)) for rule in RULES]
+def classify(text: str, rules: Sequence[Rule] | None = None) -> list[tuple[Rule, int]]:
+    active_rules = rules or RULES
+    hits = [(rule, rule.match_count(text)) for rule in active_rules]
     hits = [h for h in hits if h[1] > 0]
     suppressed = {rid for rule, _ in hits for rid in rule.suppresses}
     hits = [(rule, count) for rule, count in hits if rule.id not in suppressed]
     return sorted(hits, key=lambda x: (-x[0].priority, -x[1], x[0].id))
+
+
+def load_rules_config(path: str | Path) -> tuple[Rule, ...]:
+    """Load custom rules from a JSON config file.
+
+    Expected shape:
+    {
+      "rules": [
+        {
+          "id": "my-rule",
+          "label": "My custom category",
+          "severity": "medium",
+          "patterns": ["regex"],
+          "why": "Why this happens",
+          "fixes": ["Suggested fix"],
+          "priority": 80,
+          "suppresses": ["timeout-wait"]
+        }
+      ]
+    }
+    """
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    raw_rules = data.get("rules") if isinstance(data, dict) else None
+    if not isinstance(raw_rules, list):
+        raise ValueError("Rules config must be a JSON object with a 'rules' list.")
+    return tuple(_rule_from_dict(item, path) for item in raw_rules)
+
+
+def _rule_from_dict(item: Any, path: str | Path) -> Rule:
+    if not isinstance(item, dict):
+        raise ValueError(f"Invalid rule in {path}: each rule must be an object.")
+    required = ("id", "label", "severity", "patterns", "why", "fixes")
+    missing = [key for key in required if key not in item]
+    if missing:
+        raise ValueError(f"Invalid rule in {path}: missing {', '.join(missing)}.")
+    patterns = item["patterns"]
+    fixes = item["fixes"]
+    if not isinstance(patterns, list) or not patterns or not all(isinstance(p, str) and p for p in patterns):
+        raise ValueError(f"Invalid rule {item.get('id')!r} in {path}: patterns must be a non-empty string list.")
+    if not isinstance(fixes, list) or not fixes or not all(isinstance(f, str) and f for f in fixes):
+        raise ValueError(f"Invalid rule {item.get('id')!r} in {path}: fixes must be a non-empty string list.")
+    suppresses = item.get("suppresses", [])
+    if not isinstance(suppresses, list) or not all(isinstance(s, str) for s in suppresses):
+        raise ValueError(f"Invalid rule {item.get('id')!r} in {path}: suppresses must be a string list.")
+    priority = item.get("priority", 50)
+    if not isinstance(priority, int):
+        raise ValueError(f"Invalid rule {item.get('id')!r} in {path}: priority must be an integer.")
+    return Rule(
+        id=_required_str(item, "id", path),
+        label=_required_str(item, "label", path),
+        severity=_required_str(item, "severity", path),
+        patterns=tuple(patterns),
+        why=_required_str(item, "why", path),
+        fixes=tuple(fixes),
+        priority=priority,
+        suppresses=tuple(suppresses),
+    )
+
+
+def _required_str(item: dict[str, Any], key: str, path: str | Path) -> str:
+    value = item[key]
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"Invalid rule in {path}: {key} must be a non-empty string.")
+    return value.strip()
 
 
 def all_rule_ids() -> Iterable[str]:

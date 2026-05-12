@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 import os
 import sys
 import tempfile
@@ -69,6 +70,37 @@ class TestCli(unittest.TestCase):
         with patch.dict(os.environ, {}, clear=True):
             exit_code = main([self.fixture("examples"), "--github-step-summary"])
         self.assertEqual(exit_code, 2)
+
+    def test_loads_custom_rules_config(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            log = tmp / "custom.log"
+            log.write_text("ACME hydration deadlock after client boot", encoding="utf-8")
+            rules_config = tmp / "rules.json"
+            rules_config.write_text(json.dumps({
+                "rules": [{
+                    "id": "app-hydration",
+                    "label": "Application hydration race",
+                    "severity": "medium",
+                    "patterns": ["ACME hydration deadlock"],
+                    "why": "The app may not have finished client-side hydration before the test interacted with it.",
+                    "fixes": ["Wait for the durable hydrated UI marker before interacting."],
+                    "priority": 95,
+                }]
+            }), encoding="utf-8")
+            output = tmp / "report.json"
+            exit_code = main([str(log), "--rules-config", str(rules_config), "--format", "json", "-o", str(output)])
+            self.assertEqual(exit_code, 0)
+            report = json.loads(output.read_text())
+            self.assertEqual(report["finding_count"], 1)
+            self.assertEqual(report["findings"][0]["category"], "Application hydration race")
+
+    def test_invalid_custom_rules_config_returns_error(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            rules_config = Path(tmpdir) / "rules.json"
+            rules_config.write_text(json.dumps({"rules": [{"id": "missing-fields"}]}), encoding="utf-8")
+            exit_code = main([self.fixture("examples"), "--rules-config", str(rules_config)])
+            self.assertEqual(exit_code, 2)
 
     def test_issue_derived_strict_mode_selector_regression(self):
         categories = self.categories_for("examples", "public-issue-symptoms", "strict-mode-selector.log")

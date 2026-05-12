@@ -7,6 +7,7 @@ import sys
 from collections import Counter
 
 from .analyzer import analyze_paths, Analysis
+from .rules import RULES, load_rules_config
 
 
 def render_markdown(analysis: Analysis) -> str:
@@ -64,12 +65,23 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Append a Markdown report to the GitHub Actions step summary file from $GITHUB_STEP_SUMMARY.",
     )
+    parser.add_argument(
+        "--rules-config",
+        action="append",
+        default=[],
+        help="Load additional heuristic rules from a JSON config file. Can be repeated.",
+    )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    analysis = analyze_paths(args.paths)
+    try:
+        rules = _load_rules(args.rules_config)
+    except Exception as exc:
+        sys.stderr.write(f"Failed to load rules config: {exc}\n")
+        return 2
+    analysis = analyze_paths(args.paths, rules=rules)
     if args.format == "json":
         output = json.dumps(analysis.to_dict(), indent=2)
     else:
@@ -88,6 +100,13 @@ def main(argv: list[str] | None = None) -> int:
         if not output.endswith("\n"):
             sys.stdout.write("\n")
     return 0
+
+
+def _load_rules(config_paths: list[str]) -> tuple:
+    rules = list(RULES)
+    for path in config_paths:
+        rules.extend(load_rules_config(path))
+    return tuple(rules)
 
 
 def _write_text(path: str, output: str, mode: str = "w") -> None:

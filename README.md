@@ -39,6 +39,12 @@ Write JSON output for automation:
 pw-flake-triage path/to/reports-or-logs --format json -o triage-report.json
 ```
 
+Add project-specific heuristics with a JSON rules config:
+
+```bash
+pw-flake-triage ci.log --rules-config examples/custom-rules.json
+```
+
 Append a Markdown report to a GitHub Actions job summary while keeping JSON for artifacts or follow-up steps:
 
 ```bash
@@ -58,6 +64,29 @@ cd playwright-flake-triage
 python3 -m pip install -e .
 pw-flake-triage examples --format markdown
 ```
+
+## Custom rules
+
+Use `--rules-config` to add local project/team heuristics without changing the built-in rule set. The option can be repeated.
+
+```json
+{
+  "rules": [
+    {
+      "id": "app-hydration",
+      "label": "Application hydration race",
+      "severity": "medium",
+      "patterns": ["hydration failed", "client boot not complete"],
+      "why": "The application may not have finished client-side hydration before the test interacted with it.",
+      "fixes": ["Wait for a durable hydrated UI marker before interacting."],
+      "priority": 80,
+      "suppresses": ["timeout-wait"]
+    }
+  ]
+}
+```
+
+Rules are local JSON files. They are not uploaded or sent anywhere.
 
 ## GitHub Actions summary
 
