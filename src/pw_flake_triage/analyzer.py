@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import dataclass, asdict
 import json
 from pathlib import Path
+import re
 import xml.etree.ElementTree as ET
 from typing import Any
 
@@ -26,6 +28,7 @@ class Finding:
     fixes: list[str]
     issue_title: str = ""
     issue_url: str = ""
+    fingerprint: str = ""
 
 
 @dataclass
@@ -34,11 +37,31 @@ class Analysis:
     findings: list[Finding]
     notes: list[str]
 
+    def duplicate_groups(self) -> list[dict[str, Any]]:
+        groups: dict[str, list[Finding]] = defaultdict(list)
+        for finding in self.findings:
+            groups[finding.fingerprint].append(finding)
+        repeated = []
+        for fingerprint, findings in groups.items():
+            if len(findings) < 2:
+                continue
+            repeated.append(
+                {
+                    "fingerprint": fingerprint,
+                    "category": findings[0].category,
+                    "count": len(findings),
+                    "tests": sorted({f.test for f in findings}),
+                    "files": sorted({f.file for f in findings}),
+                }
+            )
+        return sorted(repeated, key=lambda item: (-item["count"], item["category"], item["fingerprint"]))
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "scanned_files": self.scanned_files,
             "finding_count": len(self.findings),
             "findings": [asdict(f) for f in self.findings],
+            "duplicate_groups": self.duplicate_groups(),
             "notes": self.notes,
         }
 
@@ -86,13 +109,14 @@ def _make_findings(
 ) -> list[Finding]:
     metadata = metadata or {}
     found = []
+    signal = _snippet(text)
     for rule, count in classify(text, rules):
         found.append(
             Finding(
                 file=str(file),
                 test=test or "(unknown test/log)",
                 status=status or "unknown",
-                signal=_snippet(text),
+                signal=signal,
                 category=rule.label,
                 severity=rule.severity,
                 confidence=min(100, 55 + count * 15),
@@ -100,6 +124,7 @@ def _make_findings(
                 fixes=list(rule.fixes),
                 issue_title=metadata.get("issue_title", ""),
                 issue_url=metadata.get("issue_url", ""),
+                fingerprint=_fingerprint(rule.id, signal),
             )
         )
     if not found and text.strip():
@@ -108,7 +133,7 @@ def _make_findings(
                 file=str(file),
                 test=test or "(unknown test/log)",
                 status=status or "unknown",
-                signal=_snippet(text),
+                signal=signal,
                 category="Unclassified failure",
                 severity="low",
                 confidence=35,
@@ -119,6 +144,7 @@ def _make_findings(
                 ],
                 issue_title=metadata.get("issue_title", ""),
                 issue_url=metadata.get("issue_url", ""),
+                fingerprint=_fingerprint("unclassified", signal),
             )
         )
     return found
@@ -223,3 +249,9 @@ def _extract_text_metadata(text: str) -> tuple[dict[str, str], str]:
 def _snippet(text: str, limit: int = 360) -> str:
     compact = " ".join(line.strip() for line in text.splitlines() if line.strip())
     return compact[:limit] + ("..." if len(compact) > limit else "")
+
+
+def _fingerprint(rule_id: str, signal: str) -> str:
+    normalized = re.sub(r"[^a-z0-9]+", " ", signal.lower()).strip()
+    normalized = re.sub(r"\b\d+\b", "<n>", normalized)
+    return f"{rule_id}:{normalized[:180]}"

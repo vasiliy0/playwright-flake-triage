@@ -95,6 +95,21 @@ class TestCli(unittest.TestCase):
             self.assertEqual(report["finding_count"], 1)
             self.assertEqual(report["findings"][0]["category"], "Application hydration race")
 
+    def test_groups_duplicate_failure_fingerprints(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            message = "Error: strict mode violation: getByRole('button', { name: 'Save' }) resolved to 2 elements"
+            (tmp / "retry-1.log").write_text(message, encoding="utf-8")
+            (tmp / "retry-2.log").write_text(message, encoding="utf-8")
+            result = analyze_paths([str(tmp)])
+            groups = result.to_dict()["duplicate_groups"]
+            self.assertEqual(len(groups), 1)
+            self.assertEqual(groups[0]["category"], SELECTOR)
+            self.assertEqual(groups[0]["count"], 2)
+            report = render_markdown(result)
+            self.assertIn("Repeated failure groups", report)
+            self.assertIn("2 findings", report)
+
     def test_invalid_custom_rules_config_returns_error(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             rules_config = Path(tmpdir) / "rules.json"

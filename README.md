@@ -106,6 +106,10 @@ Findings: **3**
 - **Auth/session or expected page state mismatch**: 2
 - **Ambiguous or brittle selector**: 1
 
+## Repeated failure groups
+- **Ambiguous or brittle selector**: 2 findings
+  - Tests: retry-1.log, retry-2.log
+
 ## Findings
 ### 1. Auth/session or expected page state mismatch
 - Issue: Synthetic auth/session timeout symptom

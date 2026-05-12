@@ -32,6 +32,16 @@ def render_markdown(analysis: Analysis) -> str:
         lines.append(f"- **{category}**: {count}")
     lines.append("")
 
+    duplicate_groups = analysis.duplicate_groups()
+    if duplicate_groups:
+        lines.append("## Repeated failure groups")
+        for group in duplicate_groups:
+            lines.append(f"- **{group['category']}**: {group['count']} findings")
+            lines.append(f"  - Tests: {', '.join(group['tests'][:5])}")
+            if len(group["tests"]) > 5:
+                lines.append(f"  - Additional tests: {len(group['tests']) - 5}")
+        lines.append("")
+
     lines.append("## Findings")
     for i, f in enumerate(analysis.findings, 1):
         lines.append(f"### {i}. {f.category}")
