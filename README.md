@@ -39,6 +39,15 @@ Write JSON output for automation:
 pw-flake-triage path/to/reports-or-logs --format json -o triage-report.json
 ```
 
+Append a Markdown report to a GitHub Actions job summary while keeping JSON for artifacts or follow-up steps:
+
+```bash
+pw-flake-triage test-results ci.log \
+  --format json \
+  --output triage-report.json \
+  --github-step-summary
+```
+
 The CLI uses only local files you pass to it. It does not contact Playwright, GitHub, CI providers, or any external service.
 
 ## Clone / development install
@@ -49,6 +58,12 @@ cd playwright-flake-triage
 python3 -m pip install -e .
 pw-flake-triage examples --format markdown
 ```
+
+## GitHub Actions summary
+
+In GitHub Actions, `--github-step-summary` appends Markdown to the file path in `$GITHUB_STEP_SUMMARY`. The flag is safe to combine with `--format json --output triage-report.json`, so the workflow can show a readable summary and keep machine-readable output as an artifact.
+
+The command fails with exit code `2` if the flag is used outside GitHub Actions without `GITHUB_STEP_SUMMARY` set.
 
 ## Example output
 

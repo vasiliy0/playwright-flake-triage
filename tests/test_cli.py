@@ -1,13 +1,16 @@
 from pathlib import Path
+import os
 import sys
+import tempfile
 import tomllib
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 import pw_flake_triage
 from pw_flake_triage.analyzer import analyze_paths
-from pw_flake_triage.cli import render_markdown
+from pw_flake_triage.cli import main, render_markdown
 
 
 TIMEOUT = "Timeout / wait condition instability"
@@ -42,6 +45,30 @@ class TestCli(unittest.TestCase):
         self.assertIn("Playwright Flake Triage Report", report)
         self.assertIn(VISUAL, report)
         self.assertIn(LIFECYCLE, report)
+
+    def test_writes_github_step_summary_markdown_while_returning_json(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            summary = Path(tmpdir) / "step-summary.md"
+            output = Path(tmpdir) / "report.json"
+            with patch.dict(os.environ, {"GITHUB_STEP_SUMMARY": str(summary)}):
+                exit_code = main([
+                    self.fixture("examples", "public-issue-symptoms"),
+                    "--format",
+                    "json",
+                    "--output",
+                    str(output),
+                    "--github-step-summary",
+                ])
+            self.assertEqual(exit_code, 0)
+            self.assertIn('"finding_count": 6', output.read_text())
+            summary_text = summary.read_text()
+            self.assertIn("# Playwright Flake Triage Report", summary_text)
+            self.assertIn("Network or backend dependency flake", summary_text)
+
+    def test_github_step_summary_requires_environment_variable(self):
+        with patch.dict(os.environ, {}, clear=True):
+            exit_code = main([self.fixture("examples"), "--github-step-summary"])
+        self.assertEqual(exit_code, 2)
 
     def test_issue_derived_strict_mode_selector_regression(self):
         categories = self.categories_for("examples", "public-issue-symptoms", "strict-mode-selector.log")

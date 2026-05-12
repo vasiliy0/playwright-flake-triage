@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from collections import Counter
 
@@ -58,6 +59,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("paths", nargs="+", help="Report/log files or directories to scan")
     parser.add_argument("--format", choices=["markdown", "json"], default="markdown", help="Output format")
     parser.add_argument("--output", "-o", help="Write report to file instead of stdout")
+    parser.add_argument(
+        "--github-step-summary",
+        action="store_true",
+        help="Append a Markdown report to the GitHub Actions step summary file from $GITHUB_STEP_SUMMARY.",
+    )
     return parser
 
 
@@ -68,16 +74,27 @@ def main(argv: list[str] | None = None) -> int:
         output = json.dumps(analysis.to_dict(), indent=2)
     else:
         output = render_markdown(analysis)
+    if args.github_step_summary:
+        summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+        if not summary_path:
+            sys.stderr.write("--github-step-summary requires GITHUB_STEP_SUMMARY to be set.\n")
+            return 2
+        _write_text(summary_path, render_markdown(analysis), mode="a")
+
     if args.output:
-        with open(args.output, "w", encoding="utf-8") as fh:
-            fh.write(output)
-            if not output.endswith("\n"):
-                fh.write("\n")
+        _write_text(args.output, output)
     else:
         sys.stdout.write(output)
         if not output.endswith("\n"):
             sys.stdout.write("\n")
     return 0
+
+
+def _write_text(path: str, output: str, mode: str = "w") -> None:
+    with open(path, mode, encoding="utf-8") as fh:
+        fh.write(output)
+        if not output.endswith("\n"):
+            fh.write("\n")
 
 
 if __name__ == "__main__":
