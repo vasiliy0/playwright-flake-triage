@@ -147,6 +147,7 @@ Flaky test cleanup usually starts with a pile of traces and CI logs. This v1 doe
 
 ## Docs
 
+- [`docs/GITHUB_ACTIONS.md`](docs/GITHUB_ACTIONS.md) — CI usage with job summaries, JSON artifacts, and custom rules.
 - [`docs/PUBLIC_RELEASE_NOTES_v0.1.0.md`](docs/PUBLIC_RELEASE_NOTES_v0.1.0.md) — release notes.
 - [`SECURITY.md`](SECURITY.md) — privacy/sensitive-log notes.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — contribution boundaries.
