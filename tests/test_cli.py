@@ -149,6 +149,30 @@ class TestCli(unittest.TestCase):
         ])
         self.assertEqual(exit_code, 0)
 
+    def test_filters_by_min_confidence_and_category(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output = Path(tmpdir) / "report.json"
+            exit_code = main([
+                self.fixture("examples", "public-issue-symptoms"),
+                "--format",
+                "json",
+                "--output",
+                str(output),
+                "--min-confidence",
+                "80",
+                "--category",
+                "network",
+            ])
+            self.assertEqual(exit_code, 0)
+            report = json.loads(output.read_text())
+            self.assertEqual(report["finding_count"], 1)
+            self.assertEqual(report["findings"][0]["category"], NETWORK)
+            self.assertIn("Filtered findings below 80% confidence.", report["notes"])
+
+    def test_invalid_min_confidence_returns_error(self):
+        exit_code = main([self.fixture("examples"), "--min-confidence", "101"])
+        self.assertEqual(exit_code, 2)
+
     def test_issue_derived_strict_mode_selector_regression(self):
         categories = self.categories_for("examples", "public-issue-symptoms", "strict-mode-selector.log")
         self.assertEqual(categories, [SELECTOR])

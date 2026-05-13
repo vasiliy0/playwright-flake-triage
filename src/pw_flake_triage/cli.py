@@ -6,7 +6,7 @@ import os
 import sys
 from collections import Counter
 
-from .analyzer import analyze_paths, Analysis
+from .analyzer import analyze_paths, Analysis, Finding
 from .rules import RULES, load_rules_config
 
 
@@ -94,6 +94,18 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["low", "medium", "high"],
         help="Exit with code 1 when findings at or above this severity are detected.",
     )
+    parser.add_argument(
+        "--min-confidence",
+        type=int,
+        default=0,
+        help="Only include findings with confidence at or above this value (0-100).",
+    )
+    parser.add_argument(
+        "--category",
+        action="append",
+        default=[],
+        help="Only include findings whose category contains this text. Can be repeated.",
+    )
     return parser
 
 
@@ -105,6 +117,11 @@ def main(argv: list[str] | None = None) -> int:
         sys.stderr.write(f"Failed to load rules config: {exc}\n")
         return 2
     analysis = analyze_paths(args.paths, rules=rules)
+    try:
+        analysis = _filter_analysis(analysis, args.min_confidence, args.category)
+    except ValueError as exc:
+        sys.stderr.write(f"Invalid filter: {exc}\n")
+        return 2
     if args.format == "json":
         output = json.dumps(analysis.to_dict(), indent=2)
     else:
@@ -134,6 +151,25 @@ def _should_fail_gate(analysis: Analysis, fail_on_findings: bool, fail_on_severi
         threshold = SEVERITY_ORDER[fail_on_severity]
         return any(SEVERITY_ORDER.get(f.severity, 0) >= threshold for f in analysis.findings)
     return False
+
+
+def _filter_analysis(analysis: Analysis, min_confidence: int, categories: list[str]) -> Analysis:
+    if min_confidence < 0 or min_confidence > 100:
+        raise ValueError("--min-confidence must be between 0 and 100")
+    normalized_categories = [c.lower() for c in categories if c.strip()]
+    findings: list[Finding] = []
+    for finding in analysis.findings:
+        if finding.confidence < min_confidence:
+            continue
+        if normalized_categories and not any(term in finding.category.lower() for term in normalized_categories):
+            continue
+        findings.append(finding)
+    notes = list(analysis.notes)
+    if min_confidence:
+        notes.append(f"Filtered findings below {min_confidence}% confidence.")
+    if normalized_categories:
+        notes.append("Filtered findings by category: " + ", ".join(categories))
+    return Analysis(scanned_files=analysis.scanned_files, findings=findings, notes=notes)
 
 
 def _load_rules(config_paths: list[str]) -> tuple:
