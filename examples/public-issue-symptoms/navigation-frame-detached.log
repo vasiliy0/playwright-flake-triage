@@ -1,0 +1,8 @@
+Issue: Synthetic navigation/frame detachment symptom
+Source: https://github.com/example/repo/issues/456
+
+Error: locator.click: Frame was detached
+Call log:
+  - waiting for getByRole('link', { name: 'Checkout' })
+  - attempting click action
+  - navigation interrupted by another navigation

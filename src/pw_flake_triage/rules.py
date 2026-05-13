@@ -101,6 +101,20 @@ RULES: tuple[Rule, ...] = (
         priority=70,
     ),
     Rule(
+        id="navigation-frame-race",
+        label="Navigation/frame detachment race",
+        severity="medium",
+        patterns=(r"Frame was detached", r"Navigation .*interrupted", r"navigating frame was detached", r"frame.*detached"),
+        why="The test may interact with a frame or page while the app is navigating, reloading, or replacing embedded content.",
+        fixes=(
+            "Wrap the action that triggers navigation in an explicit wait/expect pattern.",
+            "Avoid interacting with frame locators captured before navigation or iframe replacement.",
+            "Assert a durable post-navigation URL, heading, or app-ready marker before the next action.",
+        ),
+        priority=75,
+        suppresses=("timeout-wait",),
+    ),
+    Rule(
         id="visual-snapshot",
         label="Visual/snapshot instability",
         severity="medium",

@@ -20,6 +20,7 @@ AUTH_STATE = "Auth/session or expected page state mismatch"
 LIFECYCLE = "Browser/context/page lifecycle race"
 VISUAL = "Visual/snapshot instability"
 NETWORK = "Network or backend dependency flake"
+NAV_FRAME = "Navigation/frame detachment race"
 
 
 class TestCli(unittest.TestCase):
@@ -61,7 +62,7 @@ class TestCli(unittest.TestCase):
                     "--github-step-summary",
                 ])
             self.assertEqual(exit_code, 0)
-            self.assertIn('"finding_count": 6', output.read_text())
+            self.assertIn('"finding_count": 7', output.read_text())
             summary_text = summary.read_text()
             self.assertIn("# Playwright Flake Triage Report", summary_text)
             self.assertIn("Network or backend dependency flake", summary_text)
@@ -179,6 +180,11 @@ class TestCli(unittest.TestCase):
         categories = self.categories_for("examples", "public-issue-symptoms", "network-neterr-timeout.log")
         self.assertIn(NETWORK, categories)
 
+    def test_issue_derived_navigation_frame_detached_regression(self):
+        categories = self.categories_for("examples", "public-issue-symptoms", "navigation-frame-detached.log")
+        self.assertEqual(categories, [NAV_FRAME])
+        self.assertNotIn(TIMEOUT, categories)
+
     def test_all_issue_derived_fixtures_are_part_of_regression_suite(self):
         result = analyze_paths([self.fixture("examples", "public-issue-symptoms")])
         by_test = {finding.test: finding.category for finding in result.findings}
@@ -188,7 +194,8 @@ class TestCli(unittest.TestCase):
         self.assertEqual(by_test["browser-lifecycle-target-closed.log"], LIFECYCLE)
         self.assertEqual(by_test["network-econnreset.log"], NETWORK)
         self.assertEqual(by_test["network-neterr-timeout.log"], NETWORK)
-        self.assertEqual(len(result.findings), 6)
+        self.assertEqual(by_test["navigation-frame-detached.log"], NAV_FRAME)
+        self.assertEqual(len(result.findings), 7)
 
 
 if __name__ == "__main__":
