@@ -106,6 +106,16 @@ def build_parser() -> argparse.ArgumentParser:
         default=[],
         help="Only include findings whose category contains this text. Can be repeated.",
     )
+    parser.add_argument(
+        "--quiet",
+        action="store_true",
+        help="Automation-friendly no-op: suppresses future non-report diagnostics; reports still write normally.",
+    )
+    parser.add_argument(
+        "--no-color",
+        action="store_true",
+        help="Automation-friendly no-op: output is plain text by default and never requires color.",
+    )
     return parser
 
 

@@ -63,6 +63,9 @@ pw-flake-triage test-results ci.log \
 
 The CLI uses only local files you pass to it. It does not contact Playwright, GitHub, CI providers, or any external service.
 
+Full workflow example: [`examples/github-actions-triage.yml`](examples/github-actions-triage.yml).
+Before/after examples for duplicate retry grouping: [`docs/BEFORE_AFTER.md`](docs/BEFORE_AFTER.md).
+
 ## Clone / development install
 
 ```bash
@@ -94,6 +97,16 @@ Use `--rules-config` to add local project/team heuristics without changing the b
 ```
 
 Rules are local JSON files. They are not uploaded or sent anywhere.
+
+## Duplicate retry grouping
+
+Repeated failures are grouped with a normalized fingerprint. Dynamic CI values such as absolute paths, line numbers, localhost ports, worker/retry ids, PIDs, hashes, timestamps, and durations are replaced before grouping. This makes repeated retry failures easier to see even when each log contains different artifact paths or runner metadata.
+
+Try the dynamic retry fixture:
+
+```bash
+pw-flake-triage examples/dynamic-ci-retry-1.log examples/dynamic-ci-retry-2.log --format markdown
+```
 
 ## CI gate modes
 
@@ -163,19 +176,34 @@ Flaky test cleanup usually starts with a pile of traces and CI logs. This v1 doe
 
 - License: MIT.
 - Distribution: GitHub source release and TestPyPI dry-run package.
-- Current release notes: [`docs/PUBLIC_RELEASE_NOTES_v0.1.0.md`](docs/PUBLIC_RELEASE_NOTES_v0.1.0.md).
+- Current published package: `0.1.4` on PyPI.
+- Next local draft: [`docs/PUBLIC_RELEASE_NOTES_v0.1.5.md`](docs/PUBLIC_RELEASE_NOTES_v0.1.5.md).
+
+## For AI agents and automation
+
+Use JSON mode as the stable machine interface:
+
+```bash
+pw-flake-triage ./test-results ./ci.log --format json --output triage-report.json --quiet --no-color
+```
+
+Machine contract: `schemas/report.schema.json` (`schema_version: 1.0`). JSON findings include category, severity, confidence, suggested fixes, and stable fingerprints for retry/group comparison. Diagnostics are written to stderr; report output goes to stdout or `--output`. Output is plain text by default; `--quiet` and `--no-color` are accepted for automation-friendly scripts.
+
+Exit codes: `0` completed/report-only, `1` configured gate matched (`--fail-on-findings` or `--fail-on-severity`), `2` usage/config/input error, `3` reserved for runtime/tool errors.
+
+Agent workflow docs: [`docs/AGENT_INTEGRATION.md`](docs/AGENT_INTEGRATION.md).
 
 ## Docs
 
 - [`docs/GITHUB_ACTIONS.md`](docs/GITHUB_ACTIONS.md) — CI usage with job summaries, JSON artifacts, and custom rules.
-- [`docs/PUBLIC_RELEASE_NOTES_v0.1.0.md`](docs/PUBLIC_RELEASE_NOTES_v0.1.0.md) — release notes.
+- [`docs/PUBLIC_RELEASE_NOTES_v0.1.5.md`](docs/PUBLIC_RELEASE_NOTES_v0.1.5.md) — next local release draft.
+- [`docs/BEFORE_AFTER.md`](docs/BEFORE_AFTER.md) — duplicate retry grouping examples.
 - [`SECURITY.md`](SECURITY.md) — privacy/sensitive-log notes.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — contribution boundaries.
 
 ## Roadmap
 
 - Parse Playwright trace zip metadata when available.
-- Add configurable custom rules.
-- Group duplicate failures across retries/workers.
-- Emit GitHub Actions step summary markdown.
+- Add more issue-derived rules and trace metadata parsing.
+- Add sample remediation PR checklist.
 - Add sample remediation PR checklist.

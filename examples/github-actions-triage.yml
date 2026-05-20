@@ -1,0 +1,38 @@
+name: playwright-triage-example
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+jobs:
+  playwright:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # Run your app setup and Playwright tests before this step.
+      - name: Install triage CLI
+        if: always()
+        run: python -m pip install playwright-flake-triage
+
+      - name: Triage Playwright reports
+        if: always()
+        run: |
+          pw-flake-triage \
+            test-results \
+            playwright-report \
+            ci.log \
+            --format json \
+            --output triage-report.json \
+            --github-step-summary
+
+      - name: Upload triage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-flake-triage-report
+          path: triage-report.json
+          if-no-files-found: ignore

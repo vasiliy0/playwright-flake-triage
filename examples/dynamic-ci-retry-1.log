@@ -1,0 +1,5 @@
+Error: strict mode violation: getByRole('button', { name: 'Save' }) resolved to 2 elements
+    at /home/runner/work/app/app/tests/settings.spec.ts:47:13
+    worker-1 retry-1 pid 12345 run 778899
+    screenshot: /tmp/playwright-artifacts/48f97d4e965e4c4ab333aa0011223344/error-context.png
+    duration 30124ms at http://localhost:4173/settings

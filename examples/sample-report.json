@@ -1,0 +1,312 @@
+{
+  "schema_version": "1.0",
+  "tool": "playwright-flake-triage",
+  "tool_version": "0.1.5",
+  "status": "warning",
+  "scanned_files": 13,
+  "finding_count": 14,
+  "summary": {
+    "scanned_files": 13,
+    "finding_count": 14,
+    "summary_by_severity": {
+      "high": 7,
+      "medium": 7
+    },
+    "summary_by_category": {
+      "Ambiguous or brittle selector": 4,
+      "Auth/session or expected page state mismatch": 2,
+      "Browser/context/page lifecycle race": 2,
+      "Navigation/frame detachment race": 1,
+      "Network or backend dependency flake": 3,
+      "Timeout / wait condition instability": 1,
+      "Visual/snapshot instability": 1
+    }
+  },
+  "summary_by_severity": {
+    "high": 7,
+    "medium": 7
+  },
+  "summary_by_category": {
+    "Ambiguous or brittle selector": 4,
+    "Auth/session or expected page state mismatch": 2,
+    "Browser/context/page lifecycle race": 2,
+    "Navigation/frame detachment race": 1,
+    "Network or backend dependency flake": 3,
+    "Timeout / wait condition instability": 1,
+    "Visual/snapshot instability": 1
+  },
+  "findings": [
+    {
+      "file": "products/playwright-flake-triage/examples/ci.log",
+      "test": "ci.log",
+      "status": "log",
+      "signal": "Error: expect(page).toHaveScreenshot('dashboard.png') failed Screenshot comparison failed: 103 pixels different",
+      "category": "Visual/snapshot instability",
+      "severity": "medium",
+      "confidence": 100,
+      "why": "Rendering may vary by font, animation, viewport, OS, time, or dynamic content.",
+      "fixes": [
+        "Freeze animations, dates, random values, fonts, and viewport.",
+        "Mask dynamic regions and use deterministic test data.",
+        "Keep visual tests in a controlled browser/OS image."
+      ],
+      "issue_title": "",
+      "issue_url": "",
+      "fingerprint": "visual-snapshot:error expect page tohavescreenshot dashboard png failed screenshot comparison failed <n> pixels different"
+    },
+    {
+      "file": "products/playwright-flake-triage/examples/dynamic-ci-retry-1.log",
+      "test": "dynamic-ci-retry-1.log",
+      "status": "log",
+      "signal": "Error: strict mode violation: getByRole('button', { name: 'Save' }) resolved to 2 elements at /home/runner/work/app/app/tests/settings.spec.ts:47:13 worker-1 retry-1 pid 12345 run 778899 screenshot: /tmp/playwright-artifacts/48f97d4e965e4c4ab333aa0011223344/error-context.png duration 30124ms at http://localhost:4173/settings",
+      "category": "Ambiguous or brittle selector",
+      "severity": "high",
+      "confidence": 85,
+      "why": "The locator may target multiple elements or a DOM node that is re-rendered during the action.",
+      "fixes": [
+        "Prefer role/test-id locators and narrow with accessible name or parent scope.",
+        "Avoid index-based selectors unless the order is part of the contract.",
+        "Re-query after UI transitions instead of storing element handles."
+      ],
+      "issue_title": "",
+      "issue_url": "",
+      "fingerprint": "selector-ambiguity:error strict mode violation getbyrole button name save resolved to <n> elements at <path> <n> <n> <ci slot> <ci slot> <pid> <ci slot> screenshot <path> <hash> <path> duration <dura"
+    },
+    {
+      "file": "products/playwright-flake-triage/examples/dynamic-ci-retry-2.log",
+      "test": "dynamic-ci-retry-2.log",
+      "status": "log",
+      "signal": "Error: strict mode violation: getByRole('button', { name: 'Save' }) resolved to 2 elements at /Users/runner/work/app/app/tests/settings.spec.ts:93:21 worker-4 retry-2 pid 67890 run 112233 screenshot: /var/folders/playwright-artifacts/0123456789abcdef0123456789abcdef/error-context.png duration 29876ms at http://localhost:5173/settings",
+      "category": "Ambiguous or brittle selector",
+      "severity": "high",
+      "confidence": 85,
+      "why": "The locator may target multiple elements or a DOM node that is re-rendered during the action.",
+      "fixes": [
+        "Prefer role/test-id locators and narrow with accessible name or parent scope.",
+        "Avoid index-based selectors unless the order is part of the contract.",
+        "Re-query after UI transitions instead of storing element handles."
+      ],
+      "issue_title": "",
+      "issue_url": "",
+      "fingerprint": "selector-ambiguity:error strict mode violation getbyrole button name save resolved to <n> elements at <path> <n> <n> <ci slot> <ci slot> <pid> <ci slot> screenshot <path> <hash> <path> duration <dura"
+    },
+    {
+      "file": "products/playwright-flake-triage/examples/dynamic-ci-retry-2.log",
+      "test": "dynamic-ci-retry-2.log",
+      "status": "log",
+      "signal": "Error: strict mode violation: getByRole('button', { name: 'Save' }) resolved to 2 elements at /Users/runner/work/app/app/tests/settings.spec.ts:93:21 worker-4 retry-2 pid 67890 run 112233 screenshot: /var/folders/playwright-artifacts/0123456789abcdef0123456789abcdef/error-context.png duration 29876ms at http://localhost:5173/settings",
+      "category": "Network or backend dependency flake",
+      "severity": "medium",
+      "confidence": 70,
+      "why": "The test depends on live services, slow APIs, or unstable test data setup.",
+      "fixes": [
+        "Mock third-party calls or record deterministic fixtures for non-contract tests.",
+        "Add explicit API health/data setup checks before the UI flow.",
+        "Separate product failures from environment failures in CI reporting."
+      ],
+      "issue_title": "",
+      "issue_url": "",
+      "fingerprint": "network-backend:error strict mode violation getbyrole button name save resolved to <n> elements at <path> <n> <n> <ci slot> <ci slot> <pid> <ci slot> screenshot <path> <hash> <path> duration <dura"
+    },
+    {
+      "file": "products/playwright-flake-triage/examples/junit.xml",
+      "test": "auth.spec.ts.login redirects",
+      "status": "failure",
+      "signal": "Target page, context or browser has been closed Protocol error during navigation",
+      "category": "Browser/context/page lifecycle race",
+      "severity": "medium",
+      "confidence": 100,
+      "why": "The page/context may close while async work is still running, often from teardown or navigation races.",
+      "fixes": [
+        "Await navigations/downloads/popups explicitly with Promise.all patterns.",
+        "Check afterEach/fixture teardown for un-awaited async operations.",
+        "Avoid sharing mutable page/context state across parallel tests."
+      ],
+      "issue_title": "",
+      "issue_url": "",
+      "fingerprint": "browser-lifecycle:target page context or browser has been closed protocol error during navigation"
+    },
+    {
+      "file": "products/playwright-flake-triage/examples/playwright-report.json",
+      "test": "checkout.spec.ts > submits order",
+      "status": "timedOut",
+      "signal": "Timeout 30000ms exceeded. locator('[data-testid=submit]').click: waiting for element to be visible",
+      "category": "Timeout / wait condition instability",
+      "severity": "high",
+      "confidence": 85,
+      "why": "The test likely assumes UI/network readiness earlier than the app can guarantee in CI.",
+      "fixes": [
+        "Replace fixed sleeps with web-first assertions on the real readiness signal.",
+        "Assert route/API completion or durable UI state before interacting.",
+        "Check whether CI CPU/network variance makes the timeout too aggressive."
+      ],
+      "issue_title": "",
+      "issue_url": "",
+      "fingerprint": "timeout-wait:timeout <duration> exceeded locator data testid submit click waiting for element to be visible"
+    },
+    {
+      "file": "products/playwright-flake-triage/examples/playwright-report.json",
+      "test": "checkout.spec.ts > shows product card",
+      "status": "failed",
+      "signal": "strict mode violation: locator('.card') resolved to 2 elements",
+      "category": "Ambiguous or brittle selector",
+      "severity": "high",
+      "confidence": 85,
+      "why": "The locator may target multiple elements or a DOM node that is re-rendered during the action.",
+      "fixes": [
+        "Prefer role/test-id locators and narrow with accessible name or parent scope.",
+        "Avoid index-based selectors unless the order is part of the contract.",
+        "Re-query after UI transitions instead of storing element handles."
+      ],
+      "issue_title": "",
+      "issue_url": "",
+      "fingerprint": "selector-ambiguity:strict mode violation locator card resolved to <n> elements"
+    },
+    {
+      "file": "products/playwright-flake-triage/examples/public-issue-symptoms/auth-session-timeout.log",
+      "test": "auth-session-timeout.log",
+      "status": "log",
+      "signal": "Playwright TimeoutError: Timeout 30000ms exceeded. logs: waiting for get_by_label(\"Keep me signed in\") The browser reached a login page but expected an authenticated application page.",
+      "category": "Auth/session or expected page state mismatch",
+      "severity": "high",
+      "confidence": 70,
+      "why": "The test may be on the wrong page/state because authentication, role permissions, cookies, or setup data differ from expectations.",
+      "fixes": [
+        "Verify the test starts with the intended storage state, user role, and seeded data.",
+        "Assert the current URL/page heading before waiting for app-specific controls.",
+        "Separate product auth failures from selector/wait flakes in the CI report."
+      ],
+      "issue_title": "Synthetic auth/session timeout symptom",
+      "issue_url": "https://github.com/example/repo/issues/123",
+      "fingerprint": "auth-session-state:playwright timeouterror timeout <duration> exceeded logs waiting for get by label keep me signed in the browser reached a login page but expected an authenticated application page"
+    },
+    {
+      "file": "products/playwright-flake-triage/examples/public-issue-symptoms/browser-lifecycle-target-closed.log",
+      "test": "browser-lifecycle-target-closed.log",
+      "status": "log",
+      "signal": "Playwright::TargetClosedError: Target page, context or browser has been closed. The job finished while an async page operation was still running.",
+      "category": "Browser/context/page lifecycle race",
+      "severity": "medium",
+      "confidence": 85,
+      "why": "The page/context may close while async work is still running, often from teardown or navigation races.",
+      "fixes": [
+        "Await navigations/downloads/popups explicitly with Promise.all patterns.",
+        "Check afterEach/fixture teardown for un-awaited async operations.",
+        "Avoid sharing mutable page/context state across parallel tests."
+      ],
+      "issue_title": "Synthetic browser lifecycle target-closed symptom",
+      "issue_url": "https://github.com/example/repo/issues/126",
+      "fingerprint": "browser-lifecycle:playwright targetclosederror target page context or browser has been closed the job finished while an async page operation was still running"
+    },
+    {
+      "file": "products/playwright-flake-triage/examples/public-issue-symptoms/navigation-frame-detached.log",
+      "test": "navigation-frame-detached.log",
+      "status": "log",
+      "signal": "Error: locator.click: Frame was detached Call log: - waiting for getByRole('link', { name: 'Checkout' }) - attempting click action - navigation interrupted by another navigation",
+      "category": "Navigation/frame detachment race",
+      "severity": "medium",
+      "confidence": 100,
+      "why": "The test may interact with a frame or page while the app is navigating, reloading, or replacing embedded content.",
+      "fixes": [
+        "Wrap the action that triggers navigation in an explicit wait/expect pattern.",
+        "Avoid interacting with frame locators captured before navigation or iframe replacement.",
+        "Assert a durable post-navigation URL, heading, or app-ready marker before the next action."
+      ],
+      "issue_title": "Synthetic navigation/frame detachment symptom",
+      "issue_url": "https://github.com/example/repo/issues/456",
+      "fingerprint": "navigation-frame-race:error locator click frame was detached call log waiting for getbyrole link name checkout attempting click action navigation interrupted by another navigation"
+    },
+    {
+      "file": "products/playwright-flake-triage/examples/public-issue-symptoms/network-econnreset.log",
+      "test": "network-econnreset.log",
+      "status": "log",
+      "signal": "Error: request failed while running Playwright in a container. Socket error: ECONNRESET when targeting the browser service.",
+      "category": "Network or backend dependency flake",
+      "severity": "medium",
+      "confidence": 85,
+      "why": "The test depends on live services, slow APIs, or unstable test data setup.",
+      "fixes": [
+        "Mock third-party calls or record deterministic fixtures for non-contract tests.",
+        "Add explicit API health/data setup checks before the UI flow.",
+        "Separate product failures from environment failures in CI reporting."
+      ],
+      "issue_title": "Synthetic network ECONNRESET symptom",
+      "issue_url": "https://github.com/example/repo/issues/127",
+      "fingerprint": "network-backend:error request failed while running playwright in a container socket error econnreset when targeting the browser service"
+    },
+    {
+      "file": "products/playwright-flake-triage/examples/public-issue-symptoms/network-neterr-timeout.log",
+      "test": "network-neterr-timeout.log",
+      "status": "log",
+      "signal": "page.goto failed: net::ERR_CONNECTION_TIMED_OUT at https://localhost:7119/ The application server was not reachable before the Playwright test started.",
+      "category": "Network or backend dependency flake",
+      "severity": "medium",
+      "confidence": 70,
+      "why": "The test depends on live services, slow APIs, or unstable test data setup.",
+      "fixes": [
+        "Mock third-party calls or record deterministic fixtures for non-contract tests.",
+        "Add explicit API health/data setup checks before the UI flow.",
+        "Separate product failures from environment failures in CI reporting."
+      ],
+      "issue_title": "Synthetic net::ERR timeout symptom",
+      "issue_url": "https://github.com/example/repo/issues/128",
+      "fingerprint": "network-backend:page goto failed net err connection timed out at <url> the application server was not reachable before the playwright test started"
+    },
+    {
+      "file": "products/playwright-flake-triage/examples/public-issue-symptoms/route-permission-hang.log",
+      "test": "route-permission-hang.log",
+      "status": "log",
+      "signal": "Page.goto: Timeout 30000ms exceeded waiting for networkidle. The CEO role is not allowed for this route and the app hangs instead of redirecting to Access Denied.",
+      "category": "Auth/session or expected page state mismatch",
+      "severity": "high",
+      "confidence": 85,
+      "why": "The test may be on the wrong page/state because authentication, role permissions, cookies, or setup data differ from expectations.",
+      "fixes": [
+        "Verify the test starts with the intended storage state, user role, and seeded data.",
+        "Assert the current URL/page heading before waiting for app-specific controls.",
+        "Separate product auth failures from selector/wait flakes in the CI report."
+      ],
+      "issue_title": "Synthetic role permission page-state symptom",
+      "issue_url": "https://github.com/example/repo/issues/125",
+      "fingerprint": "auth-session-state:page goto timeout <duration> exceeded waiting for networkidle the ceo role is not allowed for this route and the app hangs instead of redirecting to access denied"
+    },
+    {
+      "file": "products/playwright-flake-triage/examples/public-issue-symptoms/strict-mode-selector.log",
+      "test": "strict-mode-selector.log",
+      "status": "log",
+      "signal": "Error: strict mode violation: getByRole('heading', { name: /devices/i }).or(getByRole('heading', { name: /sessions/i })) resolved to 2 elements. await expect(locator).toBeVisible({ timeout: 10000 })",
+      "category": "Ambiguous or brittle selector",
+      "severity": "high",
+      "confidence": 85,
+      "why": "The locator may target multiple elements or a DOM node that is re-rendered during the action.",
+      "fixes": [
+        "Prefer role/test-id locators and narrow with accessible name or parent scope.",
+        "Avoid index-based selectors unless the order is part of the contract.",
+        "Re-query after UI transitions instead of storing element handles."
+      ],
+      "issue_title": "Synthetic strict mode selector symptom",
+      "issue_url": "https://github.com/example/repo/issues/124",
+      "fingerprint": "selector-ambiguity:error strict mode violation getbyrole heading name <path> i or getbyrole heading name <path> i resolved to <n> elements await expect locator tobevisible timeout <n>"
+    }
+  ],
+  "duplicate_groups": [
+    {
+      "fingerprint": "selector-ambiguity:error strict mode violation getbyrole button name save resolved to <n> elements at <path> <n> <n> <ci slot> <ci slot> <pid> <ci slot> screenshot <path> <hash> <path> duration <dura",
+      "category": "Ambiguous or brittle selector",
+      "count": 2,
+      "tests": [
+        "dynamic-ci-retry-1.log",
+        "dynamic-ci-retry-2.log"
+      ],
+      "files": [
+        "products/playwright-flake-triage/examples/dynamic-ci-retry-1.log",
+        "products/playwright-flake-triage/examples/dynamic-ci-retry-2.log"
+      ]
+    }
+  ],
+  "metadata": {
+    "privacy": "local-only; no telemetry, network calls, or source uploads",
+    "determinism": "fingerprints normalize common CI retry/run noise"
+  },
+  "notes": []
+}

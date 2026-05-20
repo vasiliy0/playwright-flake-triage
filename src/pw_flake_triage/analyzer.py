@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 from dataclasses import dataclass, asdict
 import json
 from pathlib import Path
@@ -8,6 +8,7 @@ import re
 import xml.etree.ElementTree as ET
 from typing import Any
 
+from . import __version__
 from .rules import RULES, Rule, classify
 
 TEXT_EXTENSIONS = {".log", ".txt", ".out", ".err"}
@@ -57,13 +58,32 @@ class Analysis:
         return sorted(repeated, key=lambda item: (-item["count"], item["category"], item["fingerprint"]))
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        severity_counts = Counter(f.severity for f in self.findings)
+        category_counts = Counter(f.category for f in self.findings)
+        report = {
+            "schema_version": "1.0",
+            "tool": "playwright-flake-triage",
+            "tool_version": __version__,
+            "status": "warning" if self.findings else "ok",
             "scanned_files": self.scanned_files,
             "finding_count": len(self.findings),
+            "summary": {
+                "scanned_files": self.scanned_files,
+                "finding_count": len(self.findings),
+                "summary_by_severity": dict(sorted(severity_counts.items())),
+                "summary_by_category": dict(sorted(category_counts.items())),
+            },
+            "summary_by_severity": dict(sorted(severity_counts.items())),
+            "summary_by_category": dict(sorted(category_counts.items())),
             "findings": [asdict(f) for f in self.findings],
             "duplicate_groups": self.duplicate_groups(),
+            "metadata": {
+                "privacy": "local-only; no telemetry, network calls, or source uploads",
+                "determinism": "fingerprints normalize common CI retry/run noise",
+            },
             "notes": self.notes,
         }
+        return report
 
 
 def discover(paths: list[Path]) -> list[Path]:
@@ -252,6 +272,35 @@ def _snippet(text: str, limit: int = 360) -> str:
 
 
 def _fingerprint(rule_id: str, signal: str) -> str:
-    normalized = re.sub(r"[^a-z0-9]+", " ", signal.lower()).strip()
-    normalized = re.sub(r"\b\d+\b", "<n>", normalized)
+    normalized = _normalize_dynamic_signal(signal)
     return f"{rule_id}:{normalized[:180]}"
+
+
+def _normalize_dynamic_signal(signal: str) -> str:
+    """Reduce CI/run-specific noise before duplicate grouping.
+
+    Retry logs often contain different worker ids, line numbers, absolute temp paths,
+    localhost ports, UUIDs, hashes, timestamps, and durations for the same underlying
+    failure. Keep the semantic Playwright wording while replacing those values with
+    stable placeholders so repeat groups are useful across retries and machines.
+    """
+    text = signal.lower()
+    replacements = [
+        (r"https?://[^\s)]+", " <url> "),
+        (r"\b[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\b", " <uuid> "),
+        (r"\b[a-f0-9]{12,}\b", " <hash> "),
+        (r"\b\d{4}-\d{2}-\d{2}[t\s]\d{2}:\d{2}:\d{2}(?:\.\d+)?z?\b", " <timestamp> "),
+        (r"\b\d+(?:\.\d+)?\s*(?:ms|s|sec|seconds|m|min|minutes)\b", " <duration> "),
+        (r"\b(?:localhost|127\.0\.0\.1|0\.0\.0\.0):\d+\b", " <hostport> "),
+        (r"(?:(?:/[\w.\-]+)+|[a-z]:\\(?:[^\\\s]+\\)+)[\w.\-]+", " <path> "),
+        (r"\b(?:line|column|col)\s+\d+\b", " <position> "),
+        (r"\b\w+\.(?:spec|test)\.(?:ts|tsx|js|jsx):\d+:\d+\b", " <test-file-position> "),
+        (r"\b(?:worker|retry|attempt|shard|run|job|build)[-_ ]?\d+\b", " <ci-slot> "),
+        (r"\bpid\s*[:=]?\s*\d+\b", " <pid> "),
+        (r"\b\d+\b", " <n> "),
+    ]
+    for pattern, replacement in replacements:
+        text = re.sub(pattern, replacement, text, flags=re.I)
+    text = re.sub(r"[^a-z0-9<>]+", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text

@@ -111,6 +111,19 @@ class TestCli(unittest.TestCase):
             self.assertIn("Repeated failure groups", report)
             self.assertIn("2 findings", report)
 
+
+    def test_duplicate_fingerprints_ignore_dynamic_ci_values(self):
+        result = analyze_paths([
+            self.fixture("examples", "dynamic-ci-retry-1.log"),
+            self.fixture("examples", "dynamic-ci-retry-2.log"),
+        ])
+        groups = result.to_dict()["duplicate_groups"]
+        self.assertEqual(len(groups), 1)
+        self.assertEqual(groups[0]["category"], SELECTOR)
+        self.assertEqual(groups[0]["count"], 2)
+        self.assertIn("dynamic-ci-retry-1.log", groups[0]["tests"])
+        self.assertIn("dynamic-ci-retry-2.log", groups[0]["tests"])
+
     def test_invalid_custom_rules_config_returns_error(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             rules_config = Path(tmpdir) / "rules.json"
@@ -208,6 +221,21 @@ class TestCli(unittest.TestCase):
         categories = self.categories_for("examples", "public-issue-symptoms", "navigation-frame-detached.log")
         self.assertEqual(categories, [NAV_FRAME])
         self.assertNotIn(TIMEOUT, categories)
+
+
+    def test_json_report_has_agent_contract_fields(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output = Path(tmpdir) / "report.json"
+            exit_code = main([self.fixture("examples", "public-issue-symptoms", "strict-mode-selector.log"), "--format", "json", "--output", str(output), "--quiet", "--no-color"])
+            self.assertEqual(exit_code, 0)
+            report = json.loads(output.read_text())
+            self.assertEqual(report["schema_version"], "1.0")
+            self.assertEqual(report["tool"], "playwright-flake-triage")
+            self.assertIn("tool_version", report)
+            self.assertIn(report["status"], {"ok", "warning"})
+            self.assertIn("summary", report)
+            self.assertIn("metadata", report)
+            self.assertEqual(report["findings"][0]["severity"], "high")
 
     def test_all_issue_derived_fixtures_are_part_of_regression_suite(self):
         result = analyze_paths([self.fixture("examples", "public-issue-symptoms")])

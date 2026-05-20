@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/vasiliy0/playwright-flake-triage/schemas/report.schema.json",
+  "title": "Playwright Flake Triage Report",
+  "type": "object",
+  "required": ["schema_version", "tool", "tool_version", "status", "scanned_files", "finding_count", "summary", "findings", "duplicate_groups", "notes"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "tool": {"const": "playwright-flake-triage"},
+    "tool_version": {"type": "string"},
+    "status": {"enum": ["ok", "warning", "fail", "error"]},
+    "scanned_files": {"type": "integer", "minimum": 0},
+    "finding_count": {"type": "integer", "minimum": 0},
+    "summary": {
+      "type": "object",
+      "required": ["scanned_files", "finding_count", "summary_by_severity", "summary_by_category"],
+      "properties": {
+        "scanned_files": {"type": "integer", "minimum": 0},
+        "finding_count": {"type": "integer", "minimum": 0},
+        "summary_by_severity": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "summary_by_category": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}}
+      },
+      "additionalProperties": true
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["file", "test", "status", "signal", "category", "severity", "confidence", "why", "fixes", "fingerprint"],
+        "properties": {
+          "file": {"type": "string"},
+          "test": {"type": "string"},
+          "status": {"type": "string"},
+          "signal": {"type": "string"},
+          "category": {"type": "string"},
+          "severity": {"enum": ["low", "medium", "high"]},
+          "confidence": {"type": "integer", "minimum": 0, "maximum": 100},
+          "why": {"type": "string"},
+          "fixes": {"type": "array", "items": {"type": "string"}},
+          "issue_title": {"type": "string"},
+          "issue_url": {"type": "string"},
+          "fingerprint": {"type": "string"}
+        },
+        "additionalProperties": true
+      }
+    },
+    "duplicate_groups": {"type": "array"},
+    "metadata": {"type": "object"},
+    "notes": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": true
+}

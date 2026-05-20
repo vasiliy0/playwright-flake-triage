@@ -59,6 +59,23 @@ jobs:
           if-no-files-found: ignore
 ```
 
+## Agent/automation JSON contract
+
+For AI agents and downstream CI steps, prefer JSON plus an uploaded artifact:
+
+```yaml
+- name: Triage Playwright reports for automation
+  if: always()
+  run: |
+    pw-flake-triage test-results ci.log \
+      --format json \
+      --output triage-report.json \
+      --quiet \
+      --no-color
+```
+
+The JSON contract is documented in `schemas/report.schema.json` and `docs/AGENT_INTEGRATION.md`.
+
 ## Optional CI gate mode
 
 By default, `pw-flake-triage` is report-only and exits `0` when findings exist. Add a gate flag if a workflow should fail after the report is written.
